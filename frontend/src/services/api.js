@@ -2,7 +2,8 @@ import axios from 'axios';
 
 // Port 8001 is the local development API. Deployments override this through
 // VITE_API_URL, so no environment-specific address is baked into production.
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8001';
+// For Vercel deployment, we use '/api' to hit the serverless functions.
+const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:8001');
 
 const api = axios.create({ baseURL: API_URL, timeout: 15000 });
 
