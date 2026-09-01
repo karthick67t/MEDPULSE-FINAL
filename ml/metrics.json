@@ -1,0 +1,30 @@
+{
+  "model_algorithm": "Logistic Regression",
+  "dataset_source": "Kaggle Medical Appointment No Shows (joniarroba/noshowappointments)",
+  "dataset_type": "Public de-identified appointment attendance records",
+  "training_note": "Only source-supported features were used; distance and treatment duration were excluded because the public dataset does not contain them.",
+  "training_records": 88421,
+  "test_records": 22106,
+  "accuracy": 0.6798154347236045,
+  "precision": 0.3261968085106383,
+  "recall": 0.5495071684587813,
+  "f1": 0.4093791722296395,
+  "roc_auc": 0.6731745231422732,
+  "pr_auc": 0.3263513026420767,
+  "confusion_matrix": [
+    [
+      12575,
+      5067
+    ],
+    [
+      2011,
+      2453
+    ]
+  ],
+  "feature_names": [
+    "age",
+    "previous_appointments",
+    "missed_appointments",
+    "appointment_frequency_days"
+  ]
+}
