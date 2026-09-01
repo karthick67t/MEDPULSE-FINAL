@@ -80,7 +80,9 @@ const Login = () => {
     if (!form.email.includes('@')) return setError('Enter a valid work email address.');
     if (form.password.length < 8) return setError('Use a password with at least 8 characters.');
     if (screen === 'signup') {
-      if (!form.name.trim()) return setError('Enter your full name.');
+      if (typeof form.name !== 'string' || !form.name.trim()) {
+        return setError('Enter your full name.');
+      }
       if (form.password !== form.confirmPassword) return setError('Passwords do not match.');
       signup(form); return;
     }
