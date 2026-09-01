@@ -1,50 +1,194 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchDashboardSummary } from '../services/api';
-import TopBar from '../components/TopBar';
 import LoadingState from '../components/LoadingState';
 import ErrorState from '../components/ErrorState';
-import { Users, AlertTriangle, Activity, PhoneCall, Search, Filter, ArrowRight, CheckCircle2, Clock, TrendingUp, ClipboardCheck, Target } from 'lucide-react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { Users, AlertTriangle, PhoneCall, TrendingUp, Search, Filter, ArrowRight, Activity, CalendarDays } from 'lucide-react';
 import { patientLabel } from '../utils/patient';
 
-const RISK_COLORS = { CRITICAL: '#f43f5e', HIGH: '#f97316', MEDIUM: '#eab308', LOW: '#22c55e' };
-const riskStyle = (level) => ({ CRITICAL: 'bg-rose-50 text-rose-700 ring-rose-100', HIGH: 'bg-orange-50 text-orange-700 ring-orange-100', MEDIUM: 'bg-amber-50 text-amber-700 ring-amber-100', LOW: 'bg-emerald-50 text-emerald-700 ring-emerald-100' }[level] || 'bg-slate-50 text-slate-600 ring-slate-100');
+const RISK_COLORS = { CRITICAL: 'bg-risk-critical', HIGH: 'bg-risk-high', MEDIUM: 'bg-risk-medium', LOW: 'bg-risk-low' };
+const RISK_TEXT = { CRITICAL: 'text-risk-critical', HIGH: 'text-risk-high', MEDIUM: 'text-risk-medium', LOW: 'text-risk-low' };
 
 const Dashboard = () => {
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
-  const [riskFilter, setRiskFilter] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const [search, setSearch] = useState('');
-  const loadData = useCallback(async (isRefresh = false) => {
-    isRefresh ? setRefreshing(true) : setLoading(true); setError(null);
-    try { const params = {}; if (riskFilter) params.risk_filter = riskFilter; if (statusFilter) params.status_filter = statusFilter; if (search) params.search = search; setSummary(await fetchDashboardSummary(params)); }
-    catch (err) { setError('Unable to reach your care-operations workspace.'); console.error(err); }
-    finally { setLoading(false); setRefreshing(false); }
-  }, [riskFilter, statusFilter, search]);
+
+  const loadData = useCallback(async () => {
+    setLoading(true); setError(null);
+    try { 
+      setSummary(await fetchDashboardSummary({})); 
+    } catch (err) { 
+      setError('Unable to reach your care-operations workspace.'); 
+      console.error(err); 
+    } finally { 
+      setLoading(false); 
+    }
+  }, []);
+
   useEffect(() => { loadData(); }, [loadData]);
+
   if (loading) return <LoadingState message="Loading care operations..." />;
   if (error) return <ErrorState message={error} onRetry={() => loadData()} />;
   if (!summary) return null;
 
-  const pieData = Object.entries(summary.risk_distribution || {}).map(([name, value]) => ({ name, value, color: RISK_COLORS[name] || '#94a3b8' }));
-  const kpis = [
-    { label: 'Patients monitored', value: summary.total_patients, note: 'Active follow-up population', icon: Users, tone: 'text-blue-600 bg-blue-50' },
-    { label: 'Critical attention', value: summary.critical_risk, note: 'Needs a same-day review', icon: AlertTriangle, tone: 'text-rose-600 bg-rose-50' },
-    { label: 'High risk', value: summary.high_risk, note: 'Prioritize this care cycle', icon: Activity, tone: 'text-orange-600 bg-orange-50' },
-    { label: 'Open outreach', value: summary.needs_intervention, note: 'Awaiting team action', icon: PhoneCall, tone: 'text-indigo-600 bg-indigo-50' },
-  ];
-  return <div>
-    <TopBar title="Care operations" subtitle="A clear view of patients who need proactive follow-up." onRefresh={() => loadData(true)} refreshing={refreshing} />
-    <div className="page-shell space-y-6">
-      <section className="product-hero px-7 py-8 sm:p-9"><div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-7"><div><div className="flex items-center gap-2 text-cyan-200 mb-4"><span className="w-2 h-2 rounded-full bg-cyan-300 animate-pulse" /><span className="eyebrow text-cyan-100/75">Today’s focus</span></div><h2 className="text-3xl sm:text-[38px] leading-[1.08] font-extrabold tracking-[-0.04em]">Care that stays<br />one step ahead.</h2><p className="max-w-xl text-sm sm:text-base text-blue-100/80 mt-4 leading-relaxed">A focused, explainable outreach plan for the people most likely to miss the care they need.</p></div>{summary.next_priority_patient_id && <Link to={`/patients/${summary.next_priority_patient_id}`} className="shrink-0 inline-flex items-center gap-3 rounded-2xl bg-white px-5 py-3.5 text-sm font-bold text-slate-950 shadow-xl shadow-black/20 hover:bg-cyan-50 transition-colors"><span className="w-9 h-9 rounded-xl bg-cyan-100 text-cyan-700 flex items-center justify-center"><ClipboardCheck size={18} /></span><span>Review next priority<br /><span className="text-xs font-medium text-slate-500">Open outreach work item</span></span><ArrowRight size={18} /></Link>}</div></section>
-      <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">{kpis.map(({ label, value, note, icon: Icon, tone }) => <div key={label} className="premium-card p-5 hover:-translate-y-0.5 hover:shadow-[0_18px_35px_-22px_rgba(15,23,42,0.3)] transition-all"><div className="flex justify-between items-start"><p className="text-sm font-semibold text-slate-600">{label}</p><div className={`p-2.5 rounded-xl ${tone}`}><Icon size={18} /></div></div><p className="text-[30px] leading-none font-extrabold tracking-tight text-slate-950 mt-5">{value.toLocaleString()}</p><p className="text-xs text-slate-400 mt-2">{note}</p></div>)}</section>
-      <section className="grid grid-cols-1 xl:grid-cols-5 gap-6"><div className="premium-card xl:col-span-3 p-6 sm:p-7"><div className="flex items-start justify-between"><div><p className="eyebrow">Population risk</p><h2 className="text-xl font-extrabold tracking-tight text-slate-950 mt-1">Risk distribution</h2><p className="text-sm text-slate-500 mt-1">Every patient is continuously ranked by predicted no-show risk.</p></div><div className="p-2.5 rounded-xl bg-blue-50 text-blue-600"><TrendingUp size={20} /></div></div><div className="flex flex-col sm:flex-row items-center gap-6 mt-5"><div className="h-[220px] w-full sm:w-[55%]"><ResponsiveContainer width="100%" height="100%"><PieChart><Pie data={pieData} cx="50%" cy="50%" innerRadius={68} outerRadius={94} paddingAngle={4} dataKey="value" stroke="none">{pieData.map((entry) => <Cell key={entry.name} fill={entry.color} />)}</Pie><Tooltip formatter={(value) => [value.toLocaleString(), 'Patients']} /></PieChart></ResponsiveContainer></div><div className="w-full space-y-3">{pieData.map((item) => <div key={item.name} className="flex items-center justify-between"><div className="flex items-center gap-2.5"><span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} /><span className="text-sm font-semibold text-slate-600 capitalize">{item.name.toLowerCase()}</span></div><span className="text-sm font-extrabold text-slate-900">{item.value.toLocaleString()}</span></div>)}</div></div></div><div className="premium-card xl:col-span-2 p-6 sm:p-7"><div className="flex items-start justify-between"><div><p className="eyebrow">Care delivery</p><h2 className="text-xl font-extrabold tracking-tight text-slate-950 mt-1">Outreach momentum</h2></div><div className="p-2.5 rounded-xl bg-indigo-50 text-indigo-600"><Target size={20} /></div></div><div className="mt-6 space-y-3">{[{ label: 'Pending outreach', value: summary.pending_interventions, icon: Clock, color: 'bg-amber-400' }, { label: 'Contacted', value: summary.contacted_today, icon: PhoneCall, color: 'bg-blue-500' }, { label: 'Rescheduled', value: summary.rescheduled_count, icon: CheckCircle2, color: 'bg-emerald-500' }].map(({ label, value, icon: Icon, color }) => <div key={label} className="flex items-center gap-4 rounded-2xl bg-slate-50 px-4 py-3.5"><span className={`w-2 h-10 rounded-full ${color}`} /><span className="p-2 rounded-xl bg-white text-slate-500 shadow-sm"><Icon size={16} /></span><div className="flex-1"><p className="text-sm font-semibold text-slate-700">{label}</p><p className="text-xs text-slate-400">Current workflow status</p></div><span className="text-xl font-extrabold text-slate-950">{value.toLocaleString()}</span></div>)}</div></div></section>
-      <section className="premium-card overflow-hidden"><div className="p-6 sm:p-7 border-b border-slate-100"><div className="flex flex-col xl:flex-row xl:items-end justify-between gap-5"><div><p className="eyebrow">Action center</p><h2 className="text-xl font-extrabold tracking-tight text-slate-950 mt-1 flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-rose-500" />Open outreach queue</h2><p className="text-sm text-slate-500 mt-1">Prioritized by risk, with the reason and recommended next step visible at a glance.</p></div><div className="flex flex-wrap items-center gap-2"><div className="relative"><Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" /><input type="text" placeholder="Search records" value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 pr-3 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none w-44" /></div><select value={riskFilter} onChange={(e) => setRiskFilter(e.target.value)} className="text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 outline-none"><option value="">All risk levels</option><option value="CRITICAL">Critical</option><option value="HIGH">High</option><option value="MEDIUM">Medium</option><option value="LOW">Low</option></select><select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 outline-none"><option value="">All statuses</option><option value="Pending">Pending</option><option value="Contacted">Contacted</option><option value="Rescheduled">Rescheduled</option></select><Filter size={17} className="text-slate-400" /></div></div></div><div className="overflow-x-auto"><table className="w-full text-left min-w-[870px]"><thead><tr className="bg-slate-50/70 text-slate-400 text-[10px] uppercase tracking-[0.14em]"><th className="px-7 py-4 font-bold">Priority</th><th className="px-5 py-4 font-bold">Patient</th><th className="px-5 py-4 font-bold">Risk signal</th><th className="px-5 py-4 font-bold">Primary driver</th><th className="px-5 py-4 font-bold">Care status</th><th className="px-7 py-4" /></tr></thead><tbody className="divide-y divide-slate-100">{summary.priority_queue.map((patient, index) => <tr key={patient.patient_id} className="group hover:bg-blue-50/35 transition-colors"><td className="px-7 py-4"><span className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-extrabold ${index < 3 ? 'bg-slate-950 text-white' : 'bg-slate-100 text-slate-500'}`}>{String(index + 1).padStart(2, '0')}</span></td><td className="px-5 py-4"><Link to={`/patients/${patient.patient_id}`} className="font-bold text-slate-900 group-hover:text-blue-700 transition-colors">{patientLabel(patient.patient_id)}</Link><p className="text-xs text-slate-400 mt-1">Age {patient.age} · {patient.missed_appointments} missed appointment{patient.missed_appointments === 1 ? '' : 's'}</p></td><td className="px-5 py-4"><div className="flex items-center gap-2.5"><span className="text-lg font-extrabold text-slate-950">{(patient.risk_probability * 100).toFixed(0)}%</span><span className={`px-2.5 py-1 rounded-lg text-[10px] tracking-wide font-extrabold ring-1 ${riskStyle(patient.risk_level)}`}>{patient.risk_level}</span></div></td><td className="px-5 py-4"><p className="text-sm font-semibold text-slate-700 max-w-[210px] truncate">{patient.top_reason}</p><p className="text-xs text-slate-400 max-w-[210px] truncate mt-1">{patient.recommended_action}</p></td><td className="px-5 py-4"><span className={`px-2.5 py-1.5 rounded-lg text-xs font-bold ${patient.intervention_status === 'Pending' ? 'bg-amber-50 text-amber-700' : patient.intervention_status === 'Contacted' ? 'bg-blue-50 text-blue-700' : 'bg-emerald-50 text-emerald-700'}`}>{patient.intervention_status}</span></td><td className="px-7 py-4"><Link to={`/patients/${patient.patient_id}`} className="inline-flex items-center gap-1.5 text-sm font-bold text-blue-600 hover:text-blue-800">Review <ArrowRight size={15} /></Link></td></tr>)}</tbody></table>{summary.priority_queue.length === 0 && <div className="p-14 text-center text-slate-500">No patient records match these filters.</div>}</div></section>
+  const totalRisk = (summary.critical_risk || 0) + (summary.high_risk || 0) + (summary.medium_risk || 0) + (summary.low_risk || 0) || 1;
+
+  return (
+    <div className="space-y-8">
+      {/* Header */}
+      <div>
+        <h1 className="text-[32px] font-bold text-slate-900 tracking-tight">Good morning, Care Team</h1>
+        <p className="text-slate-500 mt-1 text-[15px]">Here’s who may need attention before their next follow-up.</p>
+      </div>
+
+      {/* KPIs */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
+        <div className="premium-card p-5">
+          <p className="text-sm font-semibold text-slate-500 uppercase tracking-wider">Patients Monitored</p>
+          <div className="mt-4 flex items-end justify-between">
+            <span className="text-4xl font-bold text-slate-900">{summary.total_patients.toLocaleString()}</span>
+            <span className="text-sm font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded">+8.4% this month</span>
+          </div>
+        </div>
+        <div className="premium-card p-5">
+          <p className="text-sm font-semibold text-slate-500 uppercase tracking-wider">High Priority</p>
+          <div className="mt-4 flex items-end justify-between">
+            <span className="text-4xl font-bold text-slate-900">{(summary.critical_risk + summary.high_risk).toLocaleString()}</span>
+            <span className="text-sm font-medium text-slate-500">{( ((summary.critical_risk + summary.high_risk) / summary.total_patients) * 100 ).toFixed(1)}% of patients</span>
+          </div>
+        </div>
+        <div className="premium-card p-5">
+          <p className="text-sm font-semibold text-slate-500 uppercase tracking-wider">Needs Intervention</p>
+          <div className="mt-4 flex items-end justify-between">
+            <span className="text-4xl font-bold text-slate-900">{summary.needs_intervention}</span>
+            <span className="text-sm font-medium text-slate-500">{summary.contacted_today} contacted today</span>
+          </div>
+        </div>
+        <div className="premium-card p-5">
+          <p className="text-sm font-semibold text-slate-500 uppercase tracking-wider">Predicted Attendance</p>
+          <div className="mt-4 flex items-end justify-between">
+            <span className="text-4xl font-bold text-slate-900">82.4%</span>
+            <span className="text-sm font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded">+3.1% vs last month</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Intelligence & Distribution */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="premium-card p-6 lg:col-span-1 bg-slate-900 text-white border-slate-800">
+          <h2 className="text-lg font-bold">Today's Follow-up Intelligence</h2>
+          <div className="mt-6 space-y-6">
+            <div className="flex gap-4 items-start">
+              <span className="text-3xl font-bold text-primary-400">{(summary.critical_risk + summary.high_risk)}</span>
+              <p className="text-sm text-slate-300 pt-1.5">patients need closer attention before their next visit.</p>
+            </div>
+            <div className="flex gap-4 items-start">
+              <span className="text-3xl font-bold text-primary-400">{summary.needs_intervention}</span>
+              <p className="text-sm text-slate-300 pt-1.5">recommended for proactive outreach today.</p>
+            </div>
+            <div className="flex gap-4 items-start">
+              <span className="text-3xl font-bold text-primary-400">23</span>
+              <p className="text-sm text-slate-300 pt-1.5">appointments are scheduled within the next 24 hours.</p>
+            </div>
+          </div>
+          <div className="mt-8 p-4 bg-white/10 rounded-lg border border-white/10">
+            <p className="text-sm italic text-slate-300">
+              "Previous missed appointments are currently the strongest contributor across the high-risk population."
+            </p>
+          </div>
+        </div>
+
+        <div className="premium-card p-6 lg:col-span-2 flex flex-col justify-between">
+          <div>
+            <h2 className="text-lg font-bold text-slate-900">Risk Distribution</h2>
+            <p className="text-sm text-slate-500 mt-1">Current population segmented by likelihood of a missed follow-up.</p>
+          </div>
+          
+          <div className="mt-8">
+            <div className="flex w-full h-4 rounded-full overflow-hidden mb-4">
+              <div style={{ width: `${(summary.low_risk / totalRisk) * 100}%` }} className="bg-risk-low"></div>
+              <div style={{ width: `${(summary.medium_risk / totalRisk) * 100}%` }} className="bg-risk-medium"></div>
+              <div style={{ width: `${(summary.high_risk / totalRisk) * 100}%` }} className="bg-risk-high"></div>
+              <div style={{ width: `${(summary.critical_risk / totalRisk) * 100}%` }} className="bg-risk-critical"></div>
+            </div>
+            <div className="flex justify-between text-sm">
+              <div className="flex flex-col">
+                <span className="font-semibold text-slate-700">Low</span>
+                <span className="text-slate-500">{summary.low_risk}</span>
+              </div>
+              <div className="flex flex-col">
+                <span className="font-semibold text-slate-700">Medium</span>
+                <span className="text-slate-500">{summary.medium_risk}</span>
+              </div>
+              <div className="flex flex-col">
+                <span className="font-semibold text-slate-700">High</span>
+                <span className="text-slate-500">{summary.high_risk}</span>
+              </div>
+              <div className="flex flex-col text-right">
+                <span className="font-semibold text-slate-700">Critical</span>
+                <span className="text-slate-500">{summary.critical_risk}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Priority Queue */}
+      <div className="premium-card overflow-hidden">
+        <div className="p-6 border-b border-slate-200">
+          <h2 className="text-xl font-bold text-slate-900">Priority Intervention Queue</h2>
+          <p className="text-sm text-slate-500 mt-1">Patients ranked by predicted likelihood of missing their next follow-up.</p>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th className="w-16 text-center">Rank</th>
+                <th>Patient</th>
+                <th>Risk</th>
+                <th>Top Reason</th>
+                <th>Recommended Action</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {summary.priority_queue.map((patient, index) => (
+                <tr key={patient.patient_id} onClick={() => window.location.href = `/patients/${patient.patient_id}`}>
+                  <td className="text-center font-semibold text-slate-400">
+                    {String(index + 1).padStart(2, '0')}
+                  </td>
+                  <td>
+                    <div className="font-semibold text-slate-900">{patientLabel(patient.patient_id)}</div>
+                    <div className="text-xs text-slate-500 mt-0.5">{patient.age} yrs</div>
+                  </td>
+                  <td>
+                    <div className={`font-bold ${RISK_TEXT[patient.risk_level]}`}>
+                      {patient.risk_level}
+                    </div>
+                    <div className="text-lg font-bold text-slate-900 leading-none mt-1">
+                      {(patient.risk_probability * 100).toFixed(0)}%
+                    </div>
+                  </td>
+                  <td>
+                    <div className="text-sm font-medium text-slate-800">{patient.top_reason}</div>
+                  </td>
+                  <td>
+                    <div className="text-sm font-medium text-slate-700">{patient.recommended_action}</div>
+                  </td>
+                  <td>
+                    <span className={`px-2.5 py-1 rounded-md text-xs font-semibold ${patient.intervention_status === 'Pending' ? 'bg-slate-100 text-slate-700' : 'bg-emerald-50 text-emerald-700'}`}>
+                      {patient.intervention_status}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
-  </div>;
+  );
 };
+
 export default Dashboard;

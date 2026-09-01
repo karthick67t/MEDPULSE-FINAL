@@ -6,31 +6,42 @@ export default {
   ],
   theme: {
     extend: {
-      colors: {
-        'hollywood-dark': '#05070a',
-        'hollywood-card': '#0c111a',
-        'hollywood-border': '#1a2333',
-        'neon-cyan': '#00f0ff',
-        'neon-purple': '#b026ff',
+      fontFamily: {
+        sans: ['Inter', 'sans-serif'],
       },
-      backgroundImage: {
-        'cinematic-gradient': 'linear-gradient(135deg, #05070a 0%, #0c111a 100%)',
-        'glass-gradient': 'linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%)',
+      colors: {
+        background: '#f8fafc',
+        surface: '#ffffff',
+        primary: {
+          50: '#eff6ff',
+          100: '#dbeafe',
+          500: '#3b82f6',
+          600: '#2563eb',
+          900: '#1e3a8a',
+        },
+        slate: {
+          50: '#f8fafc',
+          100: '#f1f5f9',
+          200: '#e2e8f0',
+          300: '#cbd5e1',
+          400: '#94a3b8',
+          500: '#64748b',
+          600: '#475569',
+          700: '#334155',
+          800: '#1e293b',
+          900: '#0f172a',
+        },
+        risk: {
+          low: '#10b981',      // Muted green
+          medium: '#f59e0b',   // Amber
+          high: '#f97316',     // Orange
+          critical: '#ef4444', // Red
+        }
       },
       boxShadow: {
-        'neon-cyan': '0 0 15px rgba(0, 240, 255, 0.5), 0 0 30px rgba(0, 240, 255, 0.2)',
-        'neon-purple': '0 0 15px rgba(176, 38, 255, 0.5), 0 0 30px rgba(176, 38, 255, 0.2)',
-        'glass': '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
-      },
-      animation: {
-        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-        'float': 'float 6s ease-in-out infinite',
-      },
-      keyframes: {
-        float: {
-          '0%, 100%': { transform: 'translateY(0)' },
-          '50%': { transform: 'translateY(-10px)' },
-        }
+        'subtle': '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+        'premium': '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)',
+        'elevated': '0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.025)',
       }
     },
   },
