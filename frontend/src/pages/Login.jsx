@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Activity, ArrowRight, ShieldCheck, Mail, LockKeyhole, UserRound, Building2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { motion, AnimatePresence } from 'framer-motion';
+
 
 const PasswordInput = ({ value, onChange, placeholder = 'Enter password', label }) => {
   return (
@@ -103,14 +103,8 @@ const Login = () => {
             <span className="text-xl font-bold tracking-tight text-slate-900">FollowUpAI</span>
           </div>
 
-          <AnimatePresence mode="wait">
-            <motion.div 
-              key={screen}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
-            >
+          <div>
+            <div key={screen}>
               <div className="mb-8">
                 <h2 className="text-2xl font-bold text-slate-900">
                   {screen === 'signin' ? 'Sign in to FollowUpAI' : 'Create your account'}
@@ -175,8 +169,8 @@ const Login = () => {
                   <>Already have an account? <button onClick={() => {setScreen('signin'); setError('');}} className="font-semibold text-primary-600 hover:text-primary-700 transition-colors">Sign in</button></>
                 )}
               </div>
-            </motion.div>
-          </AnimatePresence>
+            </div>
+          </div>
         </div>
       </main>
     </div>
